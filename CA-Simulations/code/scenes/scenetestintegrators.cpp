@@ -49,6 +49,8 @@ protected:
 
 SceneTestIntegrators::SceneTestIntegrators() {
     widget = new WidgetTestIntegrators();
+    // reset when changing parameters
+    connect(widget, &WidgetTestIntegrators::updatedParameters, this, this->reset);
 }
 
 SceneTestIntegrators::~SceneTestIntegrators() {
@@ -141,6 +143,7 @@ void SceneTestIntegrators::reset()
     particle->vel = Vec3(0,0,0);
     particle->pos[0] = widget->getInitialPos();
     particle->vel[0] = widget->getInitialVel();
+    particleSystem.updateForces();
 
     force->setSpringConstant(widget->getStiffness());
     force->setDampingCoeff(widget->getDamping());

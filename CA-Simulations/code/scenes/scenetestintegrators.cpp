@@ -49,8 +49,9 @@ protected:
 
 SceneTestIntegrators::SceneTestIntegrators() {
     widget = new WidgetTestIntegrators();
-    // reset when changing parameters
-    connect(widget, &WidgetTestIntegrators::updatedParameters, this, this->reset);
+    // reset when changing parameters.
+    // commenting it because it was in fact more difficult than a simple connect (widget containing sim step is not reset)
+    //connect(widget, &WidgetTestIntegrators::updatedParameters, this, this->reset);
 }
 
 SceneTestIntegrators::~SceneTestIntegrators() {
@@ -116,6 +117,7 @@ void SceneTestIntegrators::reset()
 {
     init_x = widget->getInitialPos();
     init_v = widget->getInitialVel();
+
 
     time = 0;
     analytic_x = init_x;

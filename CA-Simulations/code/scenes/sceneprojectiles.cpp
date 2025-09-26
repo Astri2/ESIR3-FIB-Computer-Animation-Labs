@@ -9,7 +9,7 @@ SceneProjectiles::SceneProjectiles() {
     widget = new WidgetProjectiles();
 
     const std::vector<std::string> solvers = {
-        "Euler", "Symplectic Euler", "Midpoint", "RK2"
+        "Euler", "Symplectic Euler", "Midpoint", "RK2", "Verlet", "RK4"
     };
     widget->setSolverTypes(solvers);
     widget->setSolver1(0); // Euler
@@ -100,6 +100,14 @@ void SceneProjectiles::initialize() {
     fGravity2->addInfluencedParticle(systemNumerical2.getParticle(0));
     systemNumerical2.addForce(fGravity2);
 
+    // Air Drag force
+    fDrag1 = new ForceDrag(widget->getLinearAirDrag1(), widget->getQuadraticAirDrag1());
+    fDrag1->addInfluencedParticle(systemNumerical1.getParticle(0));
+    systemNumerical1.addForce(fDrag1);
+
+    fDrag2 = new ForceDrag(widget->getLinearAirDrag2(), widget->getQuadraticAirDrag2());
+    fDrag2->addInfluencedParticle(systemNumerical2.getParticle(0));
+    systemNumerical2.addForce(fDrag2);
 }
 
 
@@ -107,7 +115,10 @@ Integrator* createIntegrator(int type) {
     switch(type) {
         case 0: return new IntegratorEuler();
         case 1: return new IntegratorSymplecticEuler();
-        case 2: return new IntegratorVerlet();
+        case 2: return new IntegratorMidpoint();
+        case 3: return new IntegratorRK2();
+        case 4: return new IntegratorVerlet();
+        case 5: return new IntegratorRK4();
         default: return nullptr;
     }
 }
@@ -126,6 +137,10 @@ void SceneProjectiles::reset() {
     if (integrator2) delete integrator2;
     integrator1 = createIntegrator(widget->getSolver1());
     integrator2 = createIntegrator(widget->getSolver2());
+
+    // update drag forces
+    fDrag1->setDragCoefficients(widget->getLinearAirDrag1(), widget->getQuadraticAirDrag1());
+    fDrag2->setDragCoefficients(widget->getLinearAirDrag2(), widget->getQuadraticAirDrag2());
 
     // update initial particle positions
     const double zdist = 15;

@@ -37,6 +37,22 @@ int WidgetProjectiles::getSolver2() const {
     return ui->solver2->currentIndex();
 }
 
+double WidgetProjectiles::getLinearAirDrag1() const {
+    return ui->linear1->value();
+}
+
+double WidgetProjectiles::getLinearAirDrag2() const {
+    return ui->linear2->value();
+}
+
+double WidgetProjectiles::getQuadraticAirDrag1() const {
+    return ui->quadratic1->value();
+}
+
+double WidgetProjectiles::getQuadraticAirDrag2() const {
+    return ui->quadratic2->value();
+}
+
 bool WidgetProjectiles::renderSameZ() const {
     return ui->sameZ->isChecked();
 }

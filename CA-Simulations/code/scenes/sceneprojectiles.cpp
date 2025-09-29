@@ -173,6 +173,9 @@ void SceneProjectiles::reset() {
 
     // reset timer
     time = 0;
+    // don't forget to reset system times as well ._.
+    systemNumerical1.setTime(0.);
+    systemNumerical2.setTime(0.);
 }
 
 

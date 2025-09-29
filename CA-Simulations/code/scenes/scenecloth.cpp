@@ -361,7 +361,6 @@ void SceneCloth::mousePressed(const QMouseEvent* e, const Camera& cam)
             selectedParticle = -1;
         }
 
-
         if (selectedParticle >= 0) {
             cursorWorldPos = system.getParticle(selectedParticle)->pos;
         }

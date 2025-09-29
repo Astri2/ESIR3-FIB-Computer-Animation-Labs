@@ -19,7 +19,6 @@ void ForceSpring::apply() {
     Particle* p1 = getParticle1();
     Particle* p2 = getParticle2();
 
-    // TODO
     double L = this->getRestLength();
     double k_s = this->getSpringConstant(); // most likely k_e
     double k_d = this->getDampingCoeff();

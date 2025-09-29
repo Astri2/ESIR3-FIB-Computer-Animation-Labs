@@ -21,10 +21,8 @@ public:
     double getSpeed() const;
     int getSolver1() const;
     int getSolver2() const;
-    double getLinearAirDrag1() const;
-    double getLinearAirDrag2() const;
-    double getQuadraticAirDrag1() const;
-    double getQuadraticAirDrag2() const;
+    double getLinearAirDrag() const;
+    double getQuadraticAirDrag() const;
     bool renderSameZ() const;
     bool renderTrajectory() const;
 

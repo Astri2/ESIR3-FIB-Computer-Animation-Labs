@@ -101,11 +101,11 @@ void SceneProjectiles::initialize() {
     systemNumerical2.addForce(fGravity2);
 
     // Air Drag force
-    fDrag1 = new ForceDrag(widget->getLinearAirDrag1(), widget->getQuadraticAirDrag1());
+    fDrag1 = new ForceDrag(widget->getLinearAirDrag(), widget->getQuadraticAirDrag());
     fDrag1->addInfluencedParticle(systemNumerical1.getParticle(0));
     systemNumerical1.addForce(fDrag1);
 
-    fDrag2 = new ForceDrag(widget->getLinearAirDrag2(), widget->getQuadraticAirDrag2());
+    fDrag2 = new ForceDrag(widget->getLinearAirDrag(), widget->getQuadraticAirDrag());
     fDrag2->addInfluencedParticle(systemNumerical2.getParticle(0));
     systemNumerical2.addForce(fDrag2);
 }
@@ -139,8 +139,8 @@ void SceneProjectiles::reset() {
     integrator2 = createIntegrator(widget->getSolver2());
 
     // update drag forces
-    fDrag1->setDragCoefficients(widget->getLinearAirDrag1(), widget->getQuadraticAirDrag1());
-    fDrag2->setDragCoefficients(widget->getLinearAirDrag2(), widget->getQuadraticAirDrag2());
+    fDrag1->setDragCoefficients(widget->getLinearAirDrag(), widget->getQuadraticAirDrag());
+    fDrag2->setDragCoefficients(widget->getLinearAirDrag(), widget->getQuadraticAirDrag());
 
     // update initial particle positions
     const double zdist = 15;
@@ -186,19 +186,65 @@ void SceneProjectiles::update(double dt) {
 
     // ANALYTIC: projectile motion equations until we reach the ground
     Particle* p = systemAnalytic.getParticle(0);
-    double vy0 = shotSpeed*std::sin(shotAngle);
-    double tGround = (vy0 + std::sqrt(vy0*vy0 + 2*gravityAccel*shotHeight))/gravityAccel;
-    if (time - dt <= tGround) {
-        double t = std::min(time, tGround);
-        p->pos[0] = t * shotSpeed * std::cos(shotAngle);
-        p->pos[1] = shotHeight + t*vy0 - 0.5*gravityAccel*t*t;
-        p->vel    = Vec3(shotSpeed*std::cos(shotAngle),
-                         shotSpeed*std::sin(shotAngle) - gravityAccel*t, 0);
 
+
+    if(widget->getLinearAirDrag() == 0.0) {
+        /* Solution without airDrag (given by the teacher) */
+        double vy0 = shotSpeed*std::sin(shotAngle);
+        double tGround = (vy0 + std::sqrt(vy0*vy0 + 2*gravityAccel*shotHeight))/gravityAccel;
+        if (time - dt <= tGround) {
+            double t = std::min(time, tGround);
+            p->pos[0] = t * shotSpeed * std::cos(shotAngle);
+            p->pos[1] = shotHeight + t*vy0 - 0.5*gravityAccel*t*t;
+            p->vel    = Vec3(shotSpeed*std::cos(shotAngle),
+                             shotSpeed*std::sin(shotAngle) - gravityAccel*t, 0);
+
+            trajectoryAnalytic.push_back(p->pos);
+            if (trajectoryAnalytic.size() > MAX_TRAJ_POINTS) trajectoryAnalytic.pop_front();
+        }
+    } else if (p->pos[1] > 0) { // if particle reached the floor don't update it
+        /* Solution with linear airDrag */
+        // dv_x/dt = -k/m * v_x
+        // differential equation of first order (t'=-at) => solution is type C*exp(-at)
+        // if t = 0, we want initial x speed (C*1 = vx0), so C = vx0
+
+        // dv_y/dt = -g - k/m * v_y
+        // differential equation of first order with constant (t' = -at - b) => solution is type (C*exp(-at) - b/a)
+        // if t = 0, we want initial y speed (C*1-a/b = vy0) so C = vy0 + b/a
+
+        // Constant and initial values
+        double vx0 = shotSpeed * std::cos(shotAngle);
+        double vy0 = shotSpeed * std::sin(shotAngle);
+
+        double a = widget->getLinearAirDrag() / p->mass;
+        double b = gravityAccel;
+
+        double Cx = vx0;
+        double Cy = vy0 + b/a;
+
+        // Velocities
+        // use solution found above
+        double vx = Cx * std::exp(-a * time);
+        double vy = Cy * std::exp(-a * time) - b/a;
+
+        // integrate over t
+        double x = (Cx / a) * (1.0 - std::exp(-a * time));
+        double y = (Cy / a) * (1.0 - std::exp(-a * time)) - (b/a) * time + shotHeight;
+
+        // stop when before reaching 0
+        if(y >= 0.) {
+            p->pos = Vec3(x, y, 0.);
+            p->vel = Vec3(vx, vy, 0.);
+
+        } else {
+            // multiply the expected movement by the ratio between the possible y move and the computed one
+            double x_ = p->pos.x() + (x - p->pos.x()) * (p->pos.y() / (p->pos.y() - y));
+            p->pos = Vec3(x_, 0., 0.);
+            p->vel = Vec3(0., 0., 0.);
+        }
         trajectoryAnalytic.push_back(p->pos);
         if (trajectoryAnalytic.size() > MAX_TRAJ_POINTS) trajectoryAnalytic.pop_front();
     }
-
 
     // NUMERICAL INTEGRATORS:
 
@@ -210,7 +256,13 @@ void SceneProjectiles::update(double dt) {
         Particle* p = systemNumerical1.getParticle(0);
         if (p->pos.y() < 0) {
             // resolve
-            // TODO
+
+            double x = p->pos.x(), y = p->pos.y();
+            double prev_x = p->prevPos.x(), prev_y = p->prevPos.y();
+
+            double x_ = prev_x + (x - prev_x) * (prev_y / (prev_y - y));
+            p->pos = Vec3(x_, 0., p->pos.z());
+            p->vel = Vec3(0., 0., 0.);
 
             // stop sim for this system
             system1active = false;
@@ -231,7 +283,12 @@ void SceneProjectiles::update(double dt) {
         Particle* p = systemNumerical2.getParticle(0);
         if (p->pos.y() < 0) {
             // resolve
-            // TODO
+            double x = p->pos.x(), y = p->pos.y();
+            double prev_x = p->prevPos.x(), prev_y = p->prevPos.y();
+
+            double x_ = prev_x + (x - prev_x) * (prev_y / (prev_y - y));
+            p->pos = Vec3(x_, 0., p->pos.z());
+            p->vel = Vec3(0., 0., 0.);
 
             // stop sim for this system
             system2active = false;

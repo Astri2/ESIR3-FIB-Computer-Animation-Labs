@@ -3,6 +3,7 @@
 
 void IntegratorEuler::step(ParticleSystem &system, double dt) {
     double t0 = system.getTime();
+    system.setPreviousPositions(system.getPositions()); // used to clip to y=0 (scene particles)
     Vecd x0 = system.getState();
     Vecd dx = system.getDerivative();
 
@@ -16,6 +17,7 @@ void IntegratorEuler::step(ParticleSystem &system, double dt) {
 
 void IntegratorSymplecticEuler::step(ParticleSystem &system, double dt) {
     double t0 = system.getTime();
+    system.setPreviousPositions(system.getPositions()); // used to clip to y=0 (scene particles)
 
     Vecd p0 = system.getPositions();
     Vecd v0 = system.getVelocities();
@@ -33,6 +35,7 @@ void IntegratorSymplecticEuler::step(ParticleSystem &system, double dt) {
 
 void IntegratorMidpoint::step(ParticleSystem &system, double dt) {
     double t0 = system.getTime();
+    system.setPreviousPositions(system.getPositions()); // used to clip to y=0 (scene particles)
     Vecd x0 = system.getState();
 
     // compute a Euler step
@@ -56,6 +59,7 @@ void IntegratorMidpoint::step(ParticleSystem &system, double dt) {
 
 void IntegratorRK2::step(ParticleSystem &system, double dt) {
     double t0 = system.getTime();
+    system.setPreviousPositions(system.getPositions()); // used to clip to y=0 (scene particles)
     Vecd x0 = system.getState();
 
     // K1: do a Euler step
@@ -77,6 +81,7 @@ void IntegratorRK2::step(ParticleSystem &system, double dt) {
 
 void IntegratorRK4::step(ParticleSystem &system, double dt) {
     double t0 = system.getTime();
+    system.setPreviousPositions(system.getPositions()); // used to clip to y=0 (scene particles)
     Vecd x0 = system.getState();
 
     Vecd k1 = system.getDerivative();
@@ -101,7 +106,6 @@ void IntegratorRK4::step(ParticleSystem &system, double dt) {
     system.setTime(t0+dt); // useless, but kept for clarity only
     system.updateForces();
 }
-
 
 void IntegratorVerlet::step(ParticleSystem &system, double dt) {
     double t0 = system.getTime();

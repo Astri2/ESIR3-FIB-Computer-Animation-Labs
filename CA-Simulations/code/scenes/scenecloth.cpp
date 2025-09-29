@@ -340,13 +340,27 @@ void SceneCloth::mousePressed(const QMouseEvent* e, const Camera& cam)
 
     if (!(e->modifiers() & Qt::ControlModifier)) {
 
-        Vec3 rayDir = cam.getRayDir(grabX, grabY);
+        Vec3 rayDir = cam.getRayDir(grabX, grabY); // normalized
         Vec3 origin = cam.getPos();
 
         selectedParticle = -1;
+        double minSquaredDist = std::numeric_limits<double>::max();
         for (int i = 0; i < numParticles; i++) {
-            // TODO: point-ray dist to check if we select one particle
+            // squaredNorm: avoid computing the squareroots
+            double dist2 = ((system.getParticle(i)->pos - origin).cross(rayDir)).squaredNorm();
+
+            if(dist2 < minSquaredDist) {
+                minSquaredDist = dist2;
+                selectedParticle = i;
+            }
         }
+
+        // if you aimed too poorly, don't select anything
+        double distThreshold = system.getParticle(selectedParticle)->radius;
+        if(minSquaredDist > distThreshold * distThreshold) {
+            selectedParticle = -1;
+        }
+
 
         if (selectedParticle >= 0) {
             cursorWorldPos = system.getParticle(selectedParticle)->pos;

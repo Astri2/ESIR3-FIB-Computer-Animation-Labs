@@ -202,7 +202,7 @@ void SceneProjectiles::update(double dt) {
             trajectoryAnalytic.push_back(p->pos);
             if (trajectoryAnalytic.size() > MAX_TRAJ_POINTS) trajectoryAnalytic.pop_front();
         }
-    } else if (p->pos[1] > 0) { // if particle reached the floor don't update it
+    } else if (p->pos.y() > 0) { // if particle reached the floor don't update it
         /* Solution with linear airDrag */
         // dv_x/dt = -k/m * v_x
         // differential equation of first order (t'=-at) => solution is type C*exp(-at)

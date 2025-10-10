@@ -26,6 +26,12 @@ public:
 
     bool showParticles()       const;
 
+    int getRelaxationSteps()   const;
+    double getRelaxationAlpha()   const;
+
+    int getFixedSetup()   const;
+    int getinitialSetup() const;
+
 signals:
     void updatedParameters();
     void freeAnchors();

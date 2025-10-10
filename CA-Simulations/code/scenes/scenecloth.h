@@ -4,6 +4,7 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLBuffer>
+#include <functional>
 #include "scene.h"
 #include "widgetcloth.h"
 #include "particlesystem.h"
@@ -59,7 +60,7 @@ protected:
     bool showParticles = true;
 
     // physics
-    IntegratorEuler integrator; // TODO: pick a better one
+    IntegratorVerlet integrator; // TODO: pick a better one // DONE
     ParticleSystem system;
     ForceConstAcceleration* fGravity = nullptr;
     std::vector<ForceSpring*> springsStretch;
@@ -71,6 +72,10 @@ protected:
     double clothWidth, clothHeight;
     int numParticles, numParticlesX, numParticlesY;
     int selectedParticle = -1;
+    int n_relaxation;
+    double alpha_relaxation;
+    std::function<bool(int, int)> fixedLogic = nullptr;
+    bool initialSetupVertical;
 
     // collision properties
     bool checkCollisions = true;

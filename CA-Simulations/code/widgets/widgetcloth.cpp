@@ -47,3 +47,19 @@ double WidgetCloth::getParticleRadius() const {
 bool WidgetCloth::showParticles() const {
     return ui->showParticles->isChecked();
 }
+
+int WidgetCloth::getRelaxationSteps() const {
+    return ui->RelaxationSteps->value();
+}
+
+double WidgetCloth::getRelaxationAlpha() const {
+    return ui->RelaxationAlpha->value();
+}
+
+int WidgetCloth::getFixedSetup() const {
+    return ui->FixedSetup->currentIndex();
+}
+
+int WidgetCloth::getinitialSetup() const {
+    return ui->InitialSetup->currentIndex();
+}

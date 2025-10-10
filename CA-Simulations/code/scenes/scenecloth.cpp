@@ -120,9 +120,12 @@ void SceneCloth::reset()
 
             // TODO: you can play here with different start positions and/or fixed particles
             fixedParticle[idx] = false;
+            if(fixedLogic(i,j)) fixedParticle[idx] = true;
+
             double tx = i*edgeX - 0.5*clothWidth;
             double ty = j*edgeY - 0.5*clothHeight;
-            Vec3 pos = Vec3(ty+edgeY, 70 - tx - edgeX, 0);
+
+            Vec3 pos = initialSetupVertical ? Vec3(ty+edgeY, 70 - tx - edgeX, 0) : Vec3(ty+edgeY, 70 - edgeX + 0.5*clothWidth, - tx - edgeX);;
 
             Particle* p = new Particle();
             p->id = idx;
@@ -141,8 +144,43 @@ void SceneCloth::reset()
     // forces: gravity
     system.addForce(fGravity);
 
-    // TODO: create spring forces
+    // TODO: create spring forces // DONE
     // Code for PROVOT layout
+    {
+        auto get_part = [this](size_t i, size_t j) {return system.getParticle(i*numParticlesY + j);};
+        auto add_spring_force = [this](std::vector<ForceSpring*>& springs, Particle* p, Particle* p1) {
+            ForceSpring* f = new ForceSpring;
+            f->setParticlePair(p, p1);
+            f->setRestLength((p1->pos - p->pos).norm());
+            springs.push_back(f);
+        };
+
+        // https://imgur.com/a/UMLkXSZ
+        for(size_t i = 0 ; i < (size_t)numParticlesX ; ++i) {
+            for(size_t j = 0 ; j < (size_t)numParticlesY ; ++j) {
+                Particle* p = get_part(i,j);
+
+                // 1. Strech
+                if(i < (size_t)numParticlesX - 1) { add_spring_force(springsStretch, p, get_part(i+1,j)); }
+                if(j < (size_t)numParticlesY - 1) { add_spring_force(springsStretch, p, get_part(i,j+1)); }
+
+                // 2. Shear
+                if(j != (size_t)numParticlesY - 1) {
+                    if(i != 0) { add_spring_force(springsShear, p, get_part(i-1,j+1)); }
+                    if(i < (size_t)numParticlesX - 1) { add_spring_force(springsShear, p, get_part(i+1,j+1)); }
+                }
+
+                // 3. Bend
+                if(i < (size_t)numParticlesX - 2) { add_spring_force(springsBend, p, get_part(i+2,j)); }
+                if(j < (size_t)numParticlesY - 2) { add_spring_force(springsBend, p, get_part(i,j+2)); }
+            }
+        }
+
+        // Add all springs into the system
+        for(ForceSpring* f : springsStretch) system.addForce(f);
+        for(ForceSpring* f : springsShear) system.addForce(f);
+        for(ForceSpring* f : springsBend) system.addForce(f);
+    }
     updateSprings();
 
     // update index buffer
@@ -179,10 +217,16 @@ void SceneCloth::updateSprings()
     // here I update all ks and kd parameters.
     // idea: if you want to enable/disable a spring type, you can set ks to 0 for these
     for (ForceSpring* f : springsStretch) {
+        f->setSpringConstant(ks);
+        f->setDampingCoeff(kd);
     }
     for (ForceSpring* f : springsShear) {
+        f->setSpringConstant(ks);
+        f->setDampingCoeff(kd);
     }
     for (ForceSpring* f : springsBend) {
+        f->setSpringConstant(ks);
+        f->setDampingCoeff(kd);
     }
 }
 
@@ -198,6 +242,35 @@ void SceneCloth::updateSimParams()
     }
 
     showParticles = widget->showParticles();
+
+    n_relaxation = widget->getRelaxationSteps();
+    alpha_relaxation = widget->getRelaxationAlpha();
+
+    switch(widget->getFixedSetup()) {
+    case 0: { // Full top line
+        fixedLogic = [this](int i, int j){ return i == 0; };
+    } break;
+    case 1: { // Partial top line
+        fixedLogic = [this](int i, int j){ return i == 0 && (j < 10 || j > this->numParticlesY-11); };
+    } break;
+    case 2: { // corners
+        fixedLogic = [this](int i, int j) {
+            return (i < 5 || i > this->numParticlesX-6) && (j < 5 || j > this->numParticlesY-6);
+        };
+    } break;
+    case 3: { // Nothing
+        fixedLogic = [this](int i, int j) { return false; };
+    } break;
+    case 4: { // All
+        fixedLogic = [this](int i, int j) { return true; };
+    } break;
+    default: { // Should not happen
+        fixedLogic = nullptr;
+    } break;
+    }
+
+    int val = widget->getinitialSetup();
+    initialSetupVertical = (val == 0);
 }
 
 void SceneCloth::freeAnchors()
@@ -304,6 +377,7 @@ void SceneCloth::update(double dt)
             Particle* p = system.getParticle(i);
             p->vel = Vec3(0,0,0);
             p->force = Vec3(0,0,0);
+            p->pos = p->prevPos;
         }
     }
 
@@ -312,16 +386,69 @@ void SceneCloth::update(double dt)
     integrator.step(system, dt);
     system.setPreviousPositions(ppos);
 
+    // fixed particles: no velocity, no force acting
+    for (int i = 0; i < numParticles; i++) {
+        if (fixedParticle[i]) {
+            Particle* p = system.getParticle(i);
+            p->vel = Vec3(0,0,0);
+            p->force = Vec3(0,0,0);
+            p->pos = p->prevPos;
+        }
+    }
+
     // user interaction
     if (selectedParticle >= 0) {
         Particle* p = system.getParticle(selectedParticle);
-        // p->pos = ?; TODO: assign cursor world position (see code, it's already computed)
+        p->pos = cursorWorldPos;
+        // p->pos = ?; TODO: assign cursor world position (see code, it's already computed) // DONE
         p->vel = Vec3(0,0,0);
 
         // TODO: test and resolve for collisions during user movement
     }
 
+
     // TODO: relaxation
+    auto applyRelaxation = [this](std::vector<ForceSpring*>& springs) {
+        for(ForceSpring* spring : springs) {
+            Particle* p1 = spring->getParticle1();
+            Particle* p2 = spring->getParticle2();
+
+            Vec3 d = p2->pos - p1->pos;
+            double len = d.norm();
+            double rest = spring->getRestLength();
+            double diff = len - rest;
+
+            // relax only if the spring is over extended
+            if(diff <= 0) continue;
+
+            // alpha is a factor [0,1] to reduce the effect of the relaxation
+            Vec3 correction = alpha_relaxation * diff * d.normalized();
+            // If one particle is fixed, the other takes the full correction
+            if(fixedParticle[p1->id]) {
+                // if the other is also fixed, nothing happens
+                if(!fixedParticle[p2->id]) p2->pos -= correction;;
+            }
+            else if(fixedParticle[p2->id]) {
+                // p1 can't be fixed here (if, else if)
+                p1->pos += correction;
+            }
+            // Otherwise they both take half of it
+            else {
+                p1->pos += 0.5 * correction;
+                p2->pos -= 0.5 * correction;
+            }
+
+        }
+    };
+
+
+    // Apply n times relaxation on all the springs
+    // Order should not be important ?
+    for(int _ = 0 ; _ < n_relaxation ; _++) {
+        applyRelaxation(springsStretch);
+        applyRelaxation(springsShear);
+        applyRelaxation(springsBend);
+    }
 
     // collisions
     for (Particle* p : system.getParticles()) {
@@ -345,6 +472,7 @@ void SceneCloth::mousePressed(const QMouseEvent* e, const Camera& cam)
 
         selectedParticle = -1;
         double minSquaredDist = std::numeric_limits<double>::max();
+
         for (int i = 0; i < numParticles; i++) {
             // squaredNorm: avoid computing the squareroots
             double dist2 = ((system.getParticle(i)->pos - origin).cross(rayDir)).squaredNorm();
@@ -355,11 +483,13 @@ void SceneCloth::mousePressed(const QMouseEvent* e, const Camera& cam)
             }
         }
 
+        /*
         // if you aimed too poorly, don't select anything
-        double distThreshold = system.getParticle(selectedParticle)->radius;
+        double distThreshold = 4 * system.getParticle(selectedParticle)->radius;
         if(minSquaredDist > distThreshold * distThreshold) {
             selectedParticle = -1;
         }
+        */
 
         if (selectedParticle >= 0) {
             cursorWorldPos = system.getParticle(selectedParticle)->pos;

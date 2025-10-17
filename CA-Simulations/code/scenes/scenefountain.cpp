@@ -222,11 +222,19 @@ void SceneFountain::update(double dt) {
     Collision colInfo;
     for (Particle* p : system.getParticles()) {
         if (colliderFloor.testCollision(p, colInfo)) {
-            colliderFloor.resolveCollision(p, colInfo, kBounce, kFriction);
+            colliderFloor.resolveCollision(p, colInfo, kBounce, kFriction, dt);
         }
         if (colliderRamp.testCollision(p, colInfo)) {
-            colliderRamp.resolveCollision(p, colInfo, kBounce, kFriction);
+            colliderRamp.resolveCollision(p, colInfo, kBounce, kFriction, dt);
         }
+
+        if (colliderBox.testCollision(p, colInfo)) {
+            colliderBox.resolveCollision(p, colInfo, kBounce, kFriction, dt);
+        }
+        if (colliderSphere.testCollision(p, colInfo)) {
+            colliderSphere.resolveCollision(p, colInfo, kBounce, kFriction, dt);
+        }
+
     }
 
     // check dead particles

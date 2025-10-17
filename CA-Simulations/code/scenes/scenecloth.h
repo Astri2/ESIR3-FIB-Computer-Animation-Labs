@@ -9,6 +9,7 @@
 #include "widgetcloth.h"
 #include "particlesystem.h"
 #include "integrators.h"
+#include "colliders.h"
 
 
 class SceneCloth : public Scene
@@ -60,7 +61,7 @@ protected:
     bool showParticles = true;
 
     // physics
-    IntegratorVerlet integrator; // TODO: pick a better one // DONE
+    IntegratorVerlet integrator;
     ParticleSystem system;
     ForceConstAcceleration* fGravity = nullptr;
     std::vector<ForceSpring*> springsStretch;
@@ -86,6 +87,12 @@ protected:
     // mouse interaction
     int grabX, grabY;
     Vec3 cursorWorldPos;
+
+    // Colliders
+    ColliderSphere colliderBall;
+    ColliderAABB colliderCube;
+    ColliderAABB colliderWalls;
+
 };
 
 #endif // SCENECLOTH_H

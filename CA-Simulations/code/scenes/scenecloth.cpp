@@ -73,11 +73,11 @@ void SceneCloth::initialize() {
     fGravity = new ForceConstAcceleration();
     system.addForce(fGravity);
 
-    // TODO: in my solution setup, these were the colliders
-    //colliderBall.setCenter(Vec3(40,-20,0));
-    //colliderBall.setRadius(30);
-    //colliderCube.setFromCenterSize(Vec3(-60,30,0), Vec3(60, 40, 60));
-    //colliderWalls.setFromCenterSize(Vec3(0, 0, 0), Vec3(200, 200, 200));
+    // In my solution setup, these were the colliders
+    colliderBall.setCenter(Vec3(40,-20,0));
+    colliderBall.setRadius(30);
+    colliderCube.setFromCenterSize(Vec3(-60,-30,0), Vec3(60, 40, 60));
+    colliderWalls.setFromCenterSize(Vec3(0, 25, 0), Vec3(200, 200, 200));
 }
 
 void SceneCloth::reset()
@@ -118,7 +118,7 @@ void SceneCloth::reset()
 
             int idx = i*numParticlesY + j;
 
-            // TODO: you can play here with different start positions and/or fixed particles
+            // You can play here with different start positions and/or fixed particles
             fixedParticle[idx] = false;
             if(fixedLogic(i,j)) fixedParticle[idx] = true;
 
@@ -144,7 +144,6 @@ void SceneCloth::reset()
     // forces: gravity
     system.addForce(fGravity);
 
-    // TODO: create spring forces // DONE
     // Code for PROVOT layout
     {
         auto get_part = [this](size_t i, size_t j) {return system.getParticle(i*numParticlesY + j);};
@@ -327,6 +326,38 @@ void SceneCloth::paint(const Camera& camera)
     }
 
     // TODO: draw colliders and walls
+    vaoSphereL->bind();
+    Vec3 cc = colliderBall.getCenter();
+    modelMat = QMatrix4x4();
+    modelMat.translate(cc[0], cc[1], cc[2]);
+    modelMat.scale(colliderBall.getRadius());
+    shaderPhong->setUniformValue("alpha", 1.0f);
+    shaderPhong->setUniformValue("ModelMatrix", modelMat);
+    shaderPhong->setUniformValue("matdiff", 0.8f, 0.8f, 0.8f);
+    shaderPhong->setUniformValue("matspec", 0.0f, 0.0f, 0.0f);
+    shaderPhong->setUniformValue("matshin", 0.0f);
+    glFuncs->glDrawElements(GL_TRIANGLES, 3*numFacesSphereL, GL_UNSIGNED_INT, 0);
+
+    auto drawAABB = [this, &modelMat, &glFuncs](const ColliderAABB& aabb, float alpha=1.0f) {
+        vaoCube->bind();
+        Vec3 bmin = aabb.getMin();
+        Vec3 bmax = aabb.getMax();
+        Vec3 bcenter = 0.5*(bmin + bmax);
+        Vec3 bscale = 0.5*(bmax - bmin);
+        modelMat = QMatrix4x4();
+        modelMat.translate(bcenter[0], bcenter[1], bcenter[2]);
+        modelMat.scale(bscale[0], bscale[1], bscale[2]);
+
+        if(alpha != 1.0f) glFuncs->glDepthMask(GL_FALSE);
+        shaderPhong->setUniformValue("alpha", alpha);
+        shaderPhong->setUniformValue("ModelMatrix", modelMat);
+        glFuncs->glDrawElements(GL_TRIANGLES, 3*2*6, GL_UNSIGNED_INT, 0);
+        if(alpha != 1.0f) glFuncs->glDepthMask(GL_TRUE);
+        shaderPhong->setUniformValue("alpha", 1.0f);
+    };
+
+    drawAABB(colliderCube);
+    drawAABB(colliderWalls, 0.1f);
 
     shaderPhong->release();
 
@@ -396,19 +427,35 @@ void SceneCloth::update(double dt)
         }
     }
 
+    Collision colInfo;
     // user interaction
     if (selectedParticle >= 0) {
         Particle* p = system.getParticle(selectedParticle);
+        p->prevPos = p->pos;
         p->pos = cursorWorldPos;
-        // p->pos = ?; TODO: assign cursor world position (see code, it's already computed) // DONE
         p->vel = Vec3(0,0,0);
 
         // TODO: test and resolve for collisions during user movement
+        if(checkCollisions) {
+            if (colliderBall.testCollision(p, colInfo)) {
+                colliderBall.resolveCollision(p, colInfo, colBounce, colFriction, dt);
+            }
+
+            if (colliderCube.testCollision(p, colInfo)) {
+                colliderCube.resolveCollision(p, colInfo, colBounce, colFriction, dt);
+            }
+
+            if (colliderWalls.testCollision(p, colInfo)) {
+                colliderWalls.resolveCollision(p, colInfo, colBounce, colFriction, dt);
+            }
+        }
+
+        p->prevPos = p->pos;
+        p->vel = Vec3(0,0,0);
     }
 
 
-    // TODO: relaxation
-    auto applyRelaxation = [this](std::vector<ForceSpring*>& springs) {
+    auto applyRelaxation = [this, dt](std::vector<ForceSpring*>& springs) {
         for(ForceSpring* spring : springs) {
             Particle* p1 = spring->getParticle1();
             Particle* p2 = spring->getParticle2();
@@ -426,16 +473,28 @@ void SceneCloth::update(double dt)
             // If one particle is fixed, the other takes the full correction
             if(fixedParticle[p1->id]) {
                 // if the other is also fixed, nothing happens
-                if(!fixedParticle[p2->id]) p2->pos -= correction;;
+                if(!fixedParticle[p2->id]) {
+                    p2->pos -= correction;
+
+                    // Correct velocities using euler
+                    p2->vel = (p2->pos - p2->prevPos)/dt;
+                }
             }
             else if(fixedParticle[p2->id]) {
                 // p1 can't be fixed here (if, else if)
                 p1->pos += correction;
+
+                // Correct velocities using euler
+                p1->vel = (p1->pos - p1->prevPos)/dt;
             }
             // Otherwise they both take half of it
             else {
                 p1->pos += 0.5 * correction;
                 p2->pos -= 0.5 * correction;
+
+                // Correct velocities using euler
+                p1->vel = (p1->pos - p1->prevPos)/dt;
+                p2->vel = (p2->pos - p2->prevPos)/dt;
             }
 
         }
@@ -450,9 +509,21 @@ void SceneCloth::update(double dt)
         applyRelaxation(springsBend);
     }
 
-    // collisions
+    // TODO collisions
     for (Particle* p : system.getParticles()) {
-        // TODO: test and resolve collisions
+        if(checkCollisions) {
+            if (colliderBall.testCollision(p, colInfo)) {
+                colliderBall.resolveCollision(p, colInfo, colBounce, colFriction, dt);
+            }
+
+            if (colliderCube.testCollision(p, colInfo)) {
+                colliderCube.resolveCollision(p, colInfo, colBounce, colFriction, dt);
+            }
+
+            if (colliderWalls.testCollision(p, colInfo)) {
+                colliderWalls.resolveCollision(p, colInfo, colBounce, colFriction, dt);
+            }
+        }
     }
 
     // needed after we have done collisions and relaxation, since spring forces depend on p and v

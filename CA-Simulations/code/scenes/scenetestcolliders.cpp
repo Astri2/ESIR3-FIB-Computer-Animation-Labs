@@ -90,7 +90,10 @@ void SceneTestColliders::updateSimParams()
         }
 
         if (collision) {
-            collider->resolveCollision(&particle, colInfo, widget->getRestitution(), widget->getFriction());
+            // simulate the speed, with a dt = 1.0
+            particle.vel = pPredPos - pPrevPos;
+
+            collider->resolveCollision(&particle, colInfo, widget->getRestitution(), widget->getFriction(), 1.0);
             pCorrPos = particle.pos;
 
             QString colText = "Collision\n";

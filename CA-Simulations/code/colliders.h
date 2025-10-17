@@ -4,7 +4,6 @@
 #include "defines.h"
 #include "particle.h"
 
-
 struct Collision {
     Vec3 position;
     Vec3 normal;
@@ -21,7 +20,7 @@ public:
     virtual bool isInside(const Particle* p) const = 0;
     virtual bool testCollision(const Particle* p, Collision& colInfo) const = 0;
 
-    virtual void resolveCollision(Particle* p, const Collision& col, double kElastic, double kFriction) const;
+    virtual void resolveCollision(Particle* p, const Collision& col, double kElastic, double kFriction, double dt) const;
 };
 
 

@@ -2,16 +2,20 @@
 #include <cmath>
 #include <iostream>
 
+
+#define SPEED4POS 0
+
 /*
  * Generic function for collision response from contact plane
  */
-void Collider::resolveCollision(Particle* p, const Collision& col, double kElastic, double kFriction, double dt) const
+void Collider::resolveCollision(Particle* p, const Collision& col, double kElastic, double kFriction, double dt)
 {
     // if particle is static, nothing to do
     if(p->pos - p->prevPos == Vec3(0,0,0)) {
         return;
     }
 
+    // New Speed
     Vec3 v_uncorrected = p->vel;
     Vec3 v_n_uncorrected = (col.normal.dot(v_uncorrected)) * col.normal;
     Vec3 v_t_uncorrected = v_uncorrected - v_n_uncorrected;
@@ -21,9 +25,25 @@ void Collider::resolveCollision(Particle* p, const Collision& col, double kElast
 
     Vec3 v_corrected = v_n_corrected + v_t_corrected;
 
-    double new_dt = (p->pos - col.position).norm() / (p->pos - p->prevPos).norm() * dt;
 
+    // I have issues with that one. Particle tend to pass through colliders...
+# if SPEED4POS // use new speed to compute new position
+    double new_dt = (p->pos - col.position).norm() / (p->pos - p->prevPos).norm() * dt;
     Vec3 pos_corrected = col.position + new_dt * v_corrected;
+# else // Don't use new speed to compute new position
+    double d = - col.normal.dot(col.position);
+
+    // compute the distance to the plane (which is negative because we're inside the plane)
+    double h = col.normal.dot(p->pos) + d;
+
+    // compute tengential movement
+    Vec3 dp = p->pos - col.position;
+    Vec3 dpN = col.normal.dot(dp) * col.normal;
+    Vec3 dpT = dp - dpN;
+
+    Vec3 pos_corrected = p->pos - (1 + kElastic) * h * col.normal - kFriction * dpT;
+
+#endif
 
     p->pos = pos_corrected;
     p->vel = v_corrected;
@@ -214,10 +234,26 @@ bool ColliderAABB::testCollision(const Particle* p, Collision& colInfo) const
 }
 
 bool Particle::isInside(const Particle* p) const {
-    // TODO
-    return false;
+    return (this->pos - p->pos).squaredNorm() <= (this->radius + p->radius) * (this->radius + p->radius);
 }
 bool Particle::testCollision(const Particle* p, Collision& colInfo) const {
-    // TODO
-    return false;
+    if((this->pos - p->pos).squaredNorm() > (this->radius + p->radius) * (this->radius + p->radius))
+        return false;
+
+    // don't consider movement
+    colInfo.normal = (p->pos - this->pos).normalized();
+    colInfo.position = this->pos + (this->radius + p->radius) * colInfo.normal;
+    return true;
+
+    // same logic as the sphere ?
+    // d(p0 + lambda*v0, p1 + lambda*v1)^2 = (r0+r1)^2
+    // (p0 + lambda*v0 - p1 - lambda*v1) . (p0 + lambda*v0 - p1 - lambda*v1)^T - (r0+r1)^2 = 0
+    // (p0 - p1 + lambda*(v0-v1)) . (p0 - p1 + lambda*(v0-v1))^T - (r0+r1)^2 = 0
+    // (dp      + lambda*dv     ) . (dp      + lambda*dv     )^T - r      ^2 = 0
+    // dp^2 + 2*dp*dv*lambda + dv^2*lambda^2 - r^2 = 0
+    // a = dv^2
+    // b = 2*dp*dv
+    // c = dp^2 - dr^2
+    // d = 4*dp^2*dv^2 - 4*dv^2*(dp^2-r^2)
+    // d = 4*dv^2*r^2  always > 0. must be all wrong :)
 }

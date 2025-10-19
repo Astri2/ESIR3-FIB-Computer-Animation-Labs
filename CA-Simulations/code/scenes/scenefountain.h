@@ -60,6 +60,8 @@ protected:
     double emitRate;
     double maxParticleLife;
 
+    bool particleCollisions;
+
     Vec3 fountainPos;
     int mouseX, mouseY;
 };

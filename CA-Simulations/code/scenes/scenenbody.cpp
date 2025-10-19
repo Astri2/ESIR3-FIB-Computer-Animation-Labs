@@ -1,4 +1,4 @@
-w#include "scenenbody.h"
+#include "scenenbody.h"
 #include "glutils.h"
 #include "model.h"
 #include <QMatrix4x4>

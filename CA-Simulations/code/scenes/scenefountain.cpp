@@ -87,6 +87,8 @@ void SceneFountain::updateSimParams()
     kFriction = 0.1;
     maxParticleLife = 10.0;
     emitRate = 100;
+
+    this->particleCollisions = widget->getParticleCollisions();
 }
 
 
@@ -202,7 +204,8 @@ void SceneFountain::update(double dt) {
             fGravity->addInfluencedParticle(p);
         }
 
-        p->color = Vec3(153/255.0, 217/255.0, 234/255.0);
+        p->color = Vec3(0/255.0, 0/255.0, 0/255.0);
+        //p->color = Vec3(153/255.0, 217/255.0, 234/255.0);
         p->radius = 1.0;
         p->life = maxParticleLife;
 
@@ -218,23 +221,41 @@ void SceneFountain::update(double dt) {
     integrator.step(system, dt);
     system.setPreviousPositions(ppos);
 
+
+
     // collisions
     Collision colInfo;
+
+    if(this->particleCollisions) {
+        for(Particle* p : system.getParticles()) {
+            for(const Particle* partCollider : system.getParticles()) {
+                // no self collision
+                if(p == partCollider) continue;
+
+                if(partCollider->testCollision(p, colInfo)) {
+                    // std::cout << "Collision!" << std::endl;
+                    p->color[0] = 250/255.0;
+                    Collider::resolveCollision(p, colInfo, kBounce, kFriction, dt);
+                }
+            }
+        }
+    }
+
     for (Particle* p : system.getParticles()) {
         if (colliderFloor.testCollision(p, colInfo)) {
-            colliderFloor.resolveCollision(p, colInfo, kBounce, kFriction, dt);
+            Collider::resolveCollision(p, colInfo, kBounce, kFriction, dt);
         }
         if (colliderRamp.testCollision(p, colInfo)) {
-            colliderRamp.resolveCollision(p, colInfo, kBounce, kFriction, dt);
+            Collider::resolveCollision(p, colInfo, kBounce, kFriction, dt);
         }
 
         if (colliderBox.testCollision(p, colInfo)) {
-            colliderBox.resolveCollision(p, colInfo, kBounce, kFriction, dt);
+            p->color[1] = 250/255.0;
+            Collider::resolveCollision(p, colInfo, kBounce, kFriction, dt);
         }
         if (colliderSphere.testCollision(p, colInfo)) {
-            colliderSphere.resolveCollision(p, colInfo, kBounce, kFriction, dt);
+            Collider::resolveCollision(p, colInfo, kBounce, kFriction, dt);
         }
-
     }
 
     // check dead particles

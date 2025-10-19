@@ -438,15 +438,15 @@ void SceneCloth::update(double dt)
         // TODO: test and resolve for collisions during user movement
         if(checkCollisions) {
             if (colliderBall.testCollision(p, colInfo)) {
-                colliderBall.resolveCollision(p, colInfo, colBounce, colFriction, dt);
+                Collider::resolveCollision(p, colInfo, colBounce, colFriction, dt);
             }
 
             if (colliderCube.testCollision(p, colInfo)) {
-                colliderCube.resolveCollision(p, colInfo, colBounce, colFriction, dt);
+                Collider::resolveCollision(p, colInfo, colBounce, colFriction, dt);
             }
 
             if (colliderWalls.testCollision(p, colInfo)) {
-                colliderWalls.resolveCollision(p, colInfo, colBounce, colFriction, dt);
+                Collider::resolveCollision(p, colInfo, colBounce, colFriction, dt);
             }
         }
 
@@ -513,15 +513,15 @@ void SceneCloth::update(double dt)
     for (Particle* p : system.getParticles()) {
         if(checkCollisions) {
             if (colliderBall.testCollision(p, colInfo)) {
-                colliderBall.resolveCollision(p, colInfo, colBounce, colFriction, dt);
+                Collider::resolveCollision(p, colInfo, colBounce, colFriction, dt);
             }
 
             if (colliderCube.testCollision(p, colInfo)) {
-                colliderCube.resolveCollision(p, colInfo, colBounce, colFriction, dt);
+                Collider::resolveCollision(p, colInfo, colBounce, colFriction, dt);
             }
 
             if (colliderWalls.testCollision(p, colInfo)) {
-                colliderWalls.resolveCollision(p, colInfo, colBounce, colFriction, dt);
+                Collider::resolveCollision(p, colInfo, colBounce, colFriction, dt);
             }
         }
     }

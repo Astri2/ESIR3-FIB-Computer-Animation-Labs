@@ -278,7 +278,7 @@ void SceneRope::update(double dt)
     if (checkCollisions) {
         for (Particle* p : particles) {
             if (colliderBall.testCollision(p, colInfo)) {
-                colliderBall.resolveCollision(p, colInfo, colBounce, colFriction, dt);
+                Collider::resolveCollision(p, colInfo, colBounce, colFriction, dt);
             }
         }
     }
@@ -290,7 +290,7 @@ void SceneRope::update(double dt)
         p->vel     = Vec3(0,0,0);
         if (checkCollisions) {
             if (colliderBall.testCollision(p, colInfo)) {
-                colliderBall.resolveCollision(p, colInfo, colBounce, colFriction, dt);
+                Collider::resolveCollision(p, colInfo, colBounce, colFriction, dt);
             }
         }
         p->prevPos = p->pos;

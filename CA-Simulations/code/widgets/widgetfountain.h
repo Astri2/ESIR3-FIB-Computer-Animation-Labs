@@ -16,6 +16,8 @@ public:
 
     double getGravity()    const;
 
+    bool getParticleCollisions() const;
+
 signals:
     void updatedParameters();
 

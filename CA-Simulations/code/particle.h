@@ -3,6 +3,8 @@
 
 #include "defines.h"
 
+class Collision;
+
 class Particle
 {
 public:
@@ -48,6 +50,9 @@ public:
 
     ~Particle() {
     }
+
+    bool isInside(const Particle* p) const;
+    bool testCollision(const Particle* p, Collision& colInfo) const;
 };
 
 

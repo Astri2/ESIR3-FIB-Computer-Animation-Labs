@@ -20,7 +20,7 @@ public:
     virtual bool isInside(const Particle* p) const = 0;
     virtual bool testCollision(const Particle* p, Collision& colInfo) const = 0;
 
-    virtual void resolveCollision(Particle* p, const Collision& col, double kElastic, double kFriction, double dt) const;
+    static void resolveCollision(Particle* p, const Collision& col, double kElastic, double kFriction, double dt);
 };
 
 

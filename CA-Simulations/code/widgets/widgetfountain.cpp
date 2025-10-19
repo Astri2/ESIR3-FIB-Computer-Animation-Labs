@@ -19,3 +19,7 @@ WidgetFountain::~WidgetFountain()
 double WidgetFountain::getGravity() const {
     return ui->gravity->value();
 }
+
+bool WidgetFountain::getParticleCollisions() const {
+    return ui->ParticleCollisionCheckBox->isChecked();
+}

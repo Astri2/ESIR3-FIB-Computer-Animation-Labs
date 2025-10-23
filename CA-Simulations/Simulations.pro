@@ -12,6 +12,7 @@ INCLUDEPATH += extlibs
 VPATH += code
 
 SOURCES += \
+    code/ParticleHash.cpp \
     code/camera.cpp \
     code/colliders.cpp \
     code/forces.cpp \
@@ -38,6 +39,7 @@ SOURCES += \
     code/widgets/widgettestintegrators.cpp \
 
 HEADERS += \
+    code/ParticleHash.h \
     code/camera.h \
     code/colliders.h \
     code/defines.h \

@@ -100,7 +100,8 @@ bool ColliderPlane::testCollision(const Particle* p, Collision& colInfo) const
  */
 bool ColliderSphere::isInside(const Particle* p) const
 {
-    return (this->center - p->pos).squaredNorm() < this->radius;
+    // Empty ball
+    return (this->center - p->pos).squaredNorm() == this->radius * this->radius;
 }
 
 
@@ -111,7 +112,7 @@ bool ColliderSphere::testCollision(const Particle* p, Collision& colInfo) const
     Vec3 p1 = p->pos;
 
     if(p0 == p1) {
-        if(this->isInside(p)) {
+        if(isInside(p)) {
             colInfo.normal = (p0 - this->center).normalized();
             colInfo.position = p0;
             return true;
@@ -133,9 +134,9 @@ bool ColliderSphere::testCollision(const Particle* p, Collision& colInfo) const
         return false;
     }
 
+    // we want the smallest positive one
     double tEntry = (- b - std::sqrt(delta)) / (2*a);
-    // we only want the smallest one
-    //double tExit =  (- b + delta) / (2*a);
+    if(tEntry < 0) { tEntry = (- b + std::sqrt(delta)) / (2*a); }
 
     // ensure the intersection is on the segment. Not sure this can happen
     if(tEntry < 0.0 || tEntry > 1.0) {
@@ -209,6 +210,7 @@ bool ColliderAABB::testCollision(const Particle* p, Collision& colInfo) const
 
             if(t0 > t1) std::swap(t0, t1);
 
+            // if t0 == tEnter, I should average the normal on both axis, but float comparison sucks so I won't
             if (t0 > tEnter) {
                 tEnter = t0;
                 // update the normal

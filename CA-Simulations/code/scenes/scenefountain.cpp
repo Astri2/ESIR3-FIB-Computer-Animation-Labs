@@ -4,7 +4,8 @@
 #include <QOpenGLFunctions_3_3_Core>
 
 
-SceneFountain::SceneFountain() {
+
+SceneFountain::SceneFountain(): m_particleHash(nullptr) {
     widget = new WidgetFountain();
     connect(widget, SIGNAL(updatedParameters()), this, SLOT(updateSimParams()));
 }
@@ -18,6 +19,11 @@ SceneFountain::~SceneFountain() {
     if (vaoSphereL) delete vaoSphereL;
     if (vaoCube)    delete vaoCube;
     if (fGravity)   delete fGravity;
+
+    if(m_particleHash) {
+        delete m_particleHash;
+        m_particleHash = nullptr;
+    }
 }
 
 
@@ -89,6 +95,10 @@ void SceneFountain::updateSimParams()
     emitRate = 100;
 
     this->particleCollisions = widget->getParticleCollisions();
+
+    size_t maxNumberOfParticles = size_t(maxParticleLife * emitRate);
+    double particleRadius = 1.0;
+    m_particleHash = new ParticleHash((float)(2*particleRadius), maxNumberOfParticles, 2*maxNumberOfParticles);
 }
 
 
@@ -183,9 +193,7 @@ void SceneFountain::paint(const Camera& camera) {
     shader->release();
 }
 
-
 void SceneFountain::update(double dt) {
-
     // emit new particles, reuse dead ones if possible
     int emitParticles = std::max(1, int(std::round(emitRate * dt)));
     for (int i = 0; i < emitParticles; i++) {
@@ -204,8 +212,8 @@ void SceneFountain::update(double dt) {
             fGravity->addInfluencedParticle(p);
         }
 
-        p->color = Vec3(0/255.0, 0/255.0, 0/255.0);
-        //p->color = Vec3(153/255.0, 217/255.0, 234/255.0);
+        // p->color = Vec3(0/255.0, 0/255.0, 0/255.0);
+        p->color = Vec3(153/255.0, 217/255.0, 234/255.0);
         p->radius = 1.0;
         p->life = maxParticleLife;
 
@@ -221,20 +229,50 @@ void SceneFountain::update(double dt) {
     integrator.step(system, dt);
     system.setPreviousPositions(ppos);
 
-
-
     // collisions
     Collision colInfo;
 
     if(this->particleCollisions) {
+        // update the hash (setup the table)
+        m_particleHash->update(&system.getParticles());
+
+        // Debug purpose: gives a color to each cell (randomized each update). Will only be relevant with a large spacing (20*radius for instance)
+        // partHash.showHash();
+
+// testing if collision number and # of test is the same
+#define HASH_TEST 0
+#if HASH_TEST
+        int bruteForceCollisions = 0, optiCollisions = 0;
+        int bruteForceNumberOfTest = 0, optiNumberOfTest = 0;
+
         for(Particle* p : system.getParticles()) {
+            // BruteForce
             for(const Particle* partCollider : system.getParticles()) {
                 // no self collision
                 if(p == partCollider) continue;
+                bruteForceNumberOfTest++;
+                if(partCollider->testCollision(p, colInfo)) bruteForceCollisions++;
+            }
+            for(const Particle* partCollider : m_particleHash->query(p, 2*p->radius)) {
+                if(p == partCollider) continue;
+                optiNumberOfTest++;
+                if(partCollider->testCollision(p, colInfo)) optiCollisions++;
+            }
+        }
+
+
+
+        std::cout << "Collisions count (bruteForce vs opti): " << bruteForceCollisions << " " << optiCollisions << ". Ratio of colision detection tests (#opti/#bruteforce)" << (double)optiNumberOfTest / (double)bruteForceNumberOfTest << std::endl;
+        // Results: I get the same number of collisions.
+        // The ratio is about 0.04 on a very dense setup (source near the ground)
+        // On a more sparse setup (source high above sphere), ratio is is about 2 to 3%
+#endif
+
+        for(Particle* p : system.getParticles()) {
+            for(const Particle* partCollider : m_particleHash->query(p, 2*p->radius)) {
+                if(p == partCollider) continue;
 
                 if(partCollider->testCollision(p, colInfo)) {
-                    // std::cout << "Collision!" << std::endl;
-                    p->color[0] = 250/255.0;
                     Collider::resolveCollision(p, colInfo, kBounce, kFriction, dt);
                 }
             }
@@ -250,7 +288,7 @@ void SceneFountain::update(double dt) {
         }
 
         if (colliderBox.testCollision(p, colInfo)) {
-            p->color[1] = 250/255.0;
+            // p->color[1] = 250/255.0;
             Collider::resolveCollision(p, colInfo, kBounce, kFriction, dt);
         }
         if (colliderSphere.testCollision(p, colInfo)) {

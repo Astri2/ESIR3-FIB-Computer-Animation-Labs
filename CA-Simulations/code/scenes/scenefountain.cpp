@@ -95,10 +95,13 @@ void SceneFountain::updateSimParams()
     emitRate = 100;
 
     this->particleCollisions = widget->getParticleCollisions();
+    this->useAccelerationStructure = widget->getUseAccelerationStructure();
+    this->drawAccelerationStructure = widget->getDrawAccelerationStructure();
 
     size_t maxNumberOfParticles = size_t(maxParticleLife * emitRate);
     double particleRadius = 1.0;
-    m_particleHash = new ParticleHash((float)(2*particleRadius), maxNumberOfParticles, 2*maxNumberOfParticles);
+    float spacing = widget->getAccelerationStructureSpacing();
+    m_particleHash = new ParticleHash(spacing /*(float)(2*particleRadius)*/, maxNumberOfParticles, 2*maxNumberOfParticles);
 }
 
 
@@ -233,15 +236,10 @@ void SceneFountain::update(double dt) {
     Collision colInfo;
 
     if(this->particleCollisions) {
-        // update the hash (setup the table)
-        m_particleHash->update(&system.getParticles());
-
-        // Debug purpose: gives a color to each cell (randomized each update). Will only be relevant with a large spacing (20*radius for instance)
-        // partHash.showHash();
-
 // testing if collision number and # of test is the same
 #define HASH_TEST 0
 #if HASH_TEST
+        m_particleHash->update(&system.getParticles());
         int bruteForceCollisions = 0, optiCollisions = 0;
         int bruteForceNumberOfTest = 0, optiNumberOfTest = 0;
 
@@ -267,13 +265,33 @@ void SceneFountain::update(double dt) {
         // The ratio is about 0.04 on a very dense setup (source near the ground)
         // On a more sparse setup (source high above sphere), ratio is is about 2 to 3%
 #endif
+        if(this->useAccelerationStructure) {
+            // update the hash (setup the table)
+            m_particleHash->update(&system.getParticles());
 
-        for(Particle* p : system.getParticles()) {
-            for(const Particle* partCollider : m_particleHash->query(p, 2*p->radius)) {
-                if(p == partCollider) continue;
+            if(this->drawAccelerationStructure) {
+                // Debug purpose: gives a color to each cell (randomized each update). Will only be relevant with a large spacing (20*radius for instance)
+                m_particleHash->showHash();
+            }
 
-                if(partCollider->testCollision(p, colInfo)) {
-                    Collider::resolveCollision(p, colInfo, kBounce, kFriction, dt);
+            for(Particle* p : system.getParticles()) {
+                for(const Particle* partCollider : m_particleHash->query(p, 2*p->radius)) {
+                    if(p == partCollider) continue;
+
+                    if(partCollider->testCollision(p, colInfo)) {
+                        Collider::resolveCollision(p, colInfo, kBounce, kFriction, dt);
+                    }
+                }
+            }
+        } else {
+            for(Particle* p : system.getParticles()) {
+                // BruteForce
+                for(const Particle* partCollider : system.getParticles()) {
+                    // no self collision
+                    if(p == partCollider) continue;
+                    if(partCollider->testCollision(p, colInfo)) {
+                        Collider::resolveCollision(p, colInfo, kBounce, kFriction, dt);
+                    }
                 }
             }
         }

@@ -62,6 +62,8 @@ protected:
     double maxParticleLife;
 
     bool particleCollisions;
+    bool useAccelerationStructure;
+    bool drawAccelerationStructure;
 
     Vec3 fountainPos;
     int mouseX, mouseY;

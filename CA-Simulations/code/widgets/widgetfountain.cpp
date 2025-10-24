@@ -23,3 +23,15 @@ double WidgetFountain::getGravity() const {
 bool WidgetFountain::getParticleCollisions() const {
     return ui->ParticleCollisionCheckBox->isChecked();
 }
+
+bool WidgetFountain::getUseAccelerationStructure() const {
+    return ui->AccelerationStructure->isChecked();
+}
+
+bool WidgetFountain::getDrawAccelerationStructure() const {
+    return ui->DrawAccelerationStructure->isChecked();
+}
+
+float WidgetFountain::getAccelerationStructureSpacing() const {
+    return (float)(ui->AccelerationStructureSpacing->value());
+}

@@ -17,6 +17,9 @@ public:
     double getGravity()    const;
 
     bool getParticleCollisions() const;
+    bool getUseAccelerationStructure() const;
+    bool getDrawAccelerationStructure() const;
+    float getAccelerationStructureSpacing() const;
 
 signals:
     void updatedParameters();

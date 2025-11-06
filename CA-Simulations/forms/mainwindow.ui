@@ -29,13 +29,6 @@
          <string>Simulation controls</string>
         </property>
         <layout class="QGridLayout" name="gridLayout">
-         <item row="2" column="0">
-          <widget class="QPushButton" name="btnPause">
-           <property name="text">
-            <string>Pause</string>
-           </property>
-          </widget>
-         </item>
          <item row="3" column="0">
           <widget class="QLabel" name="label_2">
            <property name="text">
@@ -43,6 +36,23 @@
            </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0" colspan="2">
+          <widget class="QWidget" name="widget" native="true"/>
+         </item>
+         <item row="2" column="1">
+          <widget class="QPushButton" name="btnReset">
+           <property name="text">
+            <string>Restart</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QPushButton" name="btnSimstep">
+           <property name="text">
+            <string>1 step</string>
            </property>
           </widget>
          </item>
@@ -62,10 +72,10 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="1">
-          <widget class="QPushButton" name="btnReset">
+         <item row="2" column="0">
+          <widget class="QPushButton" name="btnPause">
            <property name="text">
-            <string>Restart</string>
+            <string>Pause</string>
            </property>
           </widget>
          </item>
@@ -76,10 +86,31 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
-          <widget class="QPushButton" name="btnSimstep">
-           <property name="text">
-            <string>1 step</string>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="groupBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+          <horstretch>5</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>Comments</string>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <property name="sizeConstraint">
+          <enum>QLayout::SizeConstraint::SetMaximumSize</enum>
+         </property>
+         <item>
+          <widget class="QPlainTextEdit" name="plainTextEdit">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
           </widget>
          </item>
@@ -151,6 +182,7 @@
     <addaction name="actionSceneNBody"/>
     <addaction name="actionSceneTestIntegrators"/>
     <addaction name="actionSceneTestColliders"/>
+    <addaction name="actionSceneFluid"/>
    </widget>
    <widget class="QMenu" name="menuCamera">
     <property name="title">
@@ -218,6 +250,11 @@
   <action name="actionSceneNBody">
    <property name="text">
     <string>N Body</string>
+   </property>
+  </action>
+  <action name="actionSceneFluid">
+   <property name="text">
+    <string>Fluid</string>
    </property>
   </action>
  </widget>

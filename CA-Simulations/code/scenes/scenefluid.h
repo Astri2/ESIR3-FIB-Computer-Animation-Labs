@@ -1,23 +1,24 @@
-#ifndef SCENEFOUNTAIN_H
-#define SCENEFOUNTAIN_H
+#ifndef SCENEFLUID_H
+#define SCENEFLUID_H
 
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 #include <list>
 #include "scene.h"
-#include "widgetfountain.h"
+#include "widgetfluid.h"
 #include "particlesystem.h"
 #include "integrators.h"
 #include "colliders.h"
 #include "ParticleHash.h"
+#include "sph.h"
 
-class SceneFountain : public Scene
+class SceneFluid : public Scene
 {
     Q_OBJECT
 
 public:
-    SceneFountain();
-    virtual ~SceneFountain();
+    SceneFluid();
+    virtual ~SceneFluid();
 
     virtual void initialize();
     virtual void reset();
@@ -31,6 +32,7 @@ public:
         bmin = Vec3(-110, -10, -110);
         bmax = Vec3( 110, 100,  110);
     }
+
     virtual unsigned int getNumParticles() { return system.getNumParticles(); }
 
     virtual QWidget* sceneUI() { return widget; }
@@ -39,38 +41,31 @@ public slots:
     void updateSimParams();
 
 protected:
-    WidgetFountain* widget = nullptr;
+    WidgetFluid* widget = nullptr;
 
     QOpenGLShaderProgram* shader = nullptr;
     QOpenGLVertexArrayObject* vaoSphereL = nullptr;
-    QOpenGLVertexArrayObject* vaoSphereH = nullptr;
     QOpenGLVertexArrayObject* vaoCube    = nullptr;
-    QOpenGLVertexArrayObject* vaoFloor   = nullptr;
-    unsigned int numFacesSphereL = 0, numFacesSphereH = 0;
+    unsigned int numFacesSphereL = 0;
 
-    IntegratorEuler integrator;
+    IntegratorSymplecticEuler integrator;
     ParticleSystem system;
-    std::list<Particle*> deadParticles;
-    ForceConstAcceleration* fGravity;
 
-    ColliderPlane colliderFloor, colliderRamp;
-    ColliderSphere colliderSphere;
-    ColliderAABB   colliderBox;
+    // Force sources
+    ForceConstAcceleration* fGravity;
+    SPH* fSPH;
+
+    std::vector<ColliderAABB> m_colliderBoxes;
+    ColliderAABB* colliderFloor;
 
     double kBounce, kFriction;
-    double emitRate;
-    double maxParticleLife;
 
-    bool particleCollisions;
-    bool useAccelerationStructure;
-    bool drawAccelerationStructure;
+    // ParticleHash* m_particleHash;
 
-    Vec3 fountainPos;
+    double Pmass, Pradius, h, cs, rho0, mu;
+    int Sradius, Lwater;
+
     int mouseX, mouseY;
-
-    int boxBehavior;
-
-    ParticleHash* m_particleHash;
 };
 
-#endif // SCENEFOUNTAIN_H
+#endif // SCENEFLUID_H

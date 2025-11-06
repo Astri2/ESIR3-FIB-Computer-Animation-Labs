@@ -63,7 +63,7 @@ void SceneFountain::initialize() {
     colliderRamp.setPlane(Vec3(0, std::sqrt(3.0)/2.0, 0.5), 6);
     colliderSphere.setCenter(Vec3(0,0,0));
     colliderSphere.setRadius(20);
-    colliderBox.setFromBounds(Vec3(30,0,20), Vec3(50,10,60));
+    colliderBox.setFromBounds(Vec3(30,0,-30), Vec3(50,10,20));
 }
 
 
@@ -98,12 +98,13 @@ void SceneFountain::updateSimParams()
     this->useAccelerationStructure = widget->getUseAccelerationStructure();
     this->drawAccelerationStructure = widget->getDrawAccelerationStructure();
 
+    this->boxBehavior = widget->getBoxBehavior();
+
     size_t maxNumberOfParticles = size_t(maxParticleLife * emitRate);
-    double particleRadius = 1.0;
+    // double particleRadius = 1.0;
     float spacing = widget->getAccelerationStructureSpacing();
     m_particleHash = new ParticleHash(spacing /*(float)(2*particleRadius)*/, maxNumberOfParticles, 2*maxNumberOfParticles);
 }
-
 
 void SceneFountain::paint(const Camera& camera) {
 
@@ -296,6 +297,21 @@ void SceneFountain::update(double dt) {
             }
         }
     }
+    float kBounceBox = kBounce;
+    float kFrictionBox = kFriction;
+    switch(this->boxBehavior) {
+    case 0:
+        break;
+    case 1:
+        kFrictionBox = 5*kFriction;
+        break;
+    case 2:
+        kFrictionBox = -3*kFriction;
+        break;
+    case 3:
+        kBounceBox = 3*kBounce;
+        break;
+    }
 
     for (Particle* p : system.getParticles()) {
         if (colliderFloor.testCollision(p, colInfo)) {
@@ -306,10 +322,11 @@ void SceneFountain::update(double dt) {
         }
 
         if (colliderBox.testCollision(p, colInfo)) {
-            // p->color[1] = 250/255.0;
-            Collider::resolveCollision(p, colInfo, kBounce, kFriction, dt);
+            // friction box
+            Collider::resolveCollision(p, colInfo, kBounceBox, kFrictionBox, dt);
         }
         if (colliderSphere.testCollision(p, colInfo)) {
+            // bouncy sphere
             Collider::resolveCollision(p, colInfo, kBounce, kFriction, dt);
         }
     }

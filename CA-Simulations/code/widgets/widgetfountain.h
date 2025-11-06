@@ -21,6 +21,8 @@ public:
     bool getDrawAccelerationStructure() const;
     float getAccelerationStructureSpacing() const;
 
+    int getBoxBehavior() const;
+
 signals:
     void updatedParameters();
 

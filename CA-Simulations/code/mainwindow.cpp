@@ -7,6 +7,7 @@
 #include "scenenbody.h"
 #include "scenetestintegrators.h"
 #include "scenetestcolliders.h"
+#include "scenefluid.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -33,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->actionSceneNBody,      &QAction::triggered, this, [=](void){ changeScene(new SceneNBody()); });
     connect(ui->actionSceneTestIntegrators, &QAction::triggered, this, [=](void){ changeScene(new SceneTestIntegrators()); });
     connect(ui->actionSceneTestColliders,   &QAction::triggered, this, [=](void){ changeScene(new SceneTestColliders()); });
+    connect(ui->actionSceneFluid,   &QAction::triggered, this, [=](void){ changeScene(new SceneFluid()); });
 }
 
 MainWindow::~MainWindow()

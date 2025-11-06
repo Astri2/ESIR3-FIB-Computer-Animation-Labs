@@ -24,19 +24,22 @@ SOURCES += \
     code/model.cpp \
     code/particlesystem.cpp \
     code/scenes/scenecloth.cpp \
+    code/scenes/scenefluid.cpp \
     code/scenes/scenefountain.cpp \
     code/scenes/scenenbody.cpp \
     code/scenes/sceneprojectiles.cpp \
     code/scenes/scenerope.cpp \
     code/scenes/scenetestcolliders.cpp \
     code/scenes/scenetestintegrators.cpp \
+    code/sph.cpp \
     code/widgets/widgetcloth.cpp \
+    code/widgets/widgetfluid.cpp \
     code/widgets/widgetfountain.cpp \
     code/widgets/widgetnbody.cpp \
     code/widgets/widgetprojectiles.cpp \
     code/widgets/widgetrope.cpp \
     code/widgets/widgettestcolliders.cpp \
-    code/widgets/widgettestintegrators.cpp \
+    code/widgets/widgettestintegrators.cpp
 
 HEADERS += \
     code/ParticleHash.h \
@@ -53,23 +56,27 @@ HEADERS += \
     code/particlesystem.h \
     code/scene.h \
     code/scenes/scenecloth.h \
+    code/scenes/scenefluid.h \
     code/scenes/scenefountain.h \
     code/scenes/scenenbody.h \
     code/scenes/sceneprojectiles.h \
     code/scenes/scenerope.h \
     code/scenes/scenetestcolliders.h \
     code/scenes/scenetestintegrators.h \
+    code/sph.h \
     code/widgets/widgetcloth.h \
+    code/widgets/widgetfluid.h \
     code/widgets/widgetfountain.h \
     code/widgets/widgetnbody.h \
     code/widgets/widgetprojectiles.h \
     code/widgets/widgetrope.h \
     code/widgets/widgettestcolliders.h \
-    code/widgets/widgettestintegrators.h \
+    code/widgets/widgettestintegrators.h
 
 FORMS += \
     forms/mainwindow.ui \
     forms/widgetcloth.ui \
+    forms/widgetfluid.ui \
     forms/widgetfountain.ui \
     forms/widgetnbody.ui \
     forms/widgetprojectiles.ui \

@@ -35,3 +35,7 @@ bool WidgetFountain::getDrawAccelerationStructure() const {
 float WidgetFountain::getAccelerationStructureSpacing() const {
     return (float)(ui->AccelerationStructureSpacing->value());
 }
+
+int WidgetFountain::getBoxBehavior() const {
+    return ui->boxBehavior->currentIndex();
+}
